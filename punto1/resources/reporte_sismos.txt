@@ -1,0 +1,24 @@
+=== Reporte por ciudad ===
+
+Ciudad: Circasia (Habitantes: 30941)
+  - Sin movimientos registrados
+  Total movimientos: 0
+  Mayor magnitud: :No_aplica
+  Profucndiadd promedio: No_aplica
+
+Ciudad: Calarcá (Habitantes: 78684)
+  * S002 | Inicio: 09:30:10 | Fin: 09:30:29 | Mag: 4.1 | Prof: 25.0
+  Total movimientos: 1
+  Mayor magnitud: {"S002", 4.1}
+  Profucndiadd promedio: 25.0
+
+Ciudad: Armenia (Habitantes: 304314)
+  * S001 | Inicio: 08:15:02 | Fin: 08:15:18 | Mag: 3.4 | Prof: 18.0
+  * S003 | Inicio: 11:42:00 | Fin: 11:42:12 | Mag: 2.8 | Prof: 10.0
+  Total movimientos: 2
+  Mayor magnitud: {"S001", 3.4}
+  Profucndiadd promedio: 14.0
+
+=== REGISTROS RECHAZADOS ===
+Ciudades rechazadas: 0
+Movimientos rechazados: 0

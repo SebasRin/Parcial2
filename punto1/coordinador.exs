@@ -1,5 +1,6 @@
 Code.require_file("trabajador_ciudades.exs")
 Code.require_file("trabajador_movimientos.exs")
+Code.require_file("persistencia.exs")
 
 defmodule Coordinador do
 
@@ -31,9 +32,29 @@ defmodule Coordinador do
           loop(cantidad - 1, estado ++ [resultado])
       end
     else
-      datos = relacion_movimientos_ciudad(estado)
-      reporte = reporte_ciudad(datos)
-      mostrar_reporte(reporte, datos)
+      ciudad = Enum.find(estado, &(&1.tipo == :ciudad))
+      movimiento = Enum.find(estado, &(&1.tipo == :movimiento))
+      if is_map(ciudad) and is_map(movimiento)  do
+        datos = relacion_movimientos_ciudad(estado)
+        reporte = reporte_ciudad(datos)
+        texto = mostrar_reporte(reporte, datos)
+
+          case Persistencia.guardar_reporte(texto) do
+            :ok -> IO.puts("\nReporte guardado exitosamente")
+            {:error,razon} -> IO.puts("\nError al guardar el reporte: #{inspect(razon)}")
+          end
+
+        else
+          IO.puts("Error: No se pudo generar el reporte porque fallo la lectura de un archivo")
+          Enum.each(estado, fn e ->
+            case e do
+              {:error, razon} -> IO.puts("Un archivo fallo: #{inspect(razon)}")
+              _ -> :ok
+            end
+          end)
+      end
+
+
     end
   end
 
@@ -82,29 +103,36 @@ defmodule Coordinador do
   end
 
   defp mostrar_reporte(reporte,datos) do
-    IO.puts("\n=== REPORTE POR CIUDAD ===")
-    reporte
-    |> Enum.each(fn r ->
-      IO.puts("\nCiudad: #{r.nombre} (Habitantes: #{r.numero_habitantes})")
-
+    ciudades = Enum.map(reporte,fn r ->
+      movimientos =
       if r.movimientos_asociados == :Sin_movimientos_registrados do
-        IO.puts("  - Sin movimientos registrados")
+        "  - Sin movimientos registrados"
       else
-        Enum.each(r.movimientos_asociados, fn m ->
-          IO.puts("  * #{m.codigo} | Inicio: #{m.hora_inicio} | Fin: #{m.hora_final} | Mag: #{m.magnitud} | Prof: #{m.profundidad}")
-        end)
+        Enum.map(r.movimientos_asociados, fn m ->
+          "  * #{m.codigo} | Inicio: #{m.hora_inicio} | Fin: #{m.hora_final} | Mag: #{m.magnitud} | Prof: #{m.profundidad}"
+        end) |> Enum.join("\n")
       end
 
-      IO.puts("  Total movimientos: #{r.cant_movimientos_registrados}")
-      IO.puts("  Mayor magnitud: #{inspect(r.mayor_magnitud)}")
-      IO.puts("  Profundidad promedio: #{r.promedio_profundidad}")
-    end)
+      """
+      Ciudad: #{r.nombre} (Habitantes: #{r.numero_habitantes})
+      #{movimientos}
+        Total movimientos: #{r.cant_movimientos_registrados}
+        Mayor magnitud: #{inspect(r.mayor_magnitud)}
+        Profucndiadd promedio: #{r.promedio_profundidad}
+      """
+    end) |> Enum.join("\n")
 
-    # 3. Mostramos el total de rechazados
-    IO.puts("\n=== REGISTROS RECHAZADOS ===")
-    IO.puts("Ciudades rechazadas: #{datos.rechazados_ciudades}")
-    IO.puts("Movimientos rechazados: #{datos.rechazados_movimientos}")
+    rechazados = """
+    === REGISTROS RECHAZADOS ===
+    Ciudades rechazadas: #{datos.rechazados_ciudades}
+    Movimientos rechazados: #{datos.rechazados_movimientos}
+    """
 
+    texto_final = "=== Reporte por ciudad ===\n\n" <> ciudades <> "\n" <> rechazados
+
+    IO.puts(texto_final)
+
+    texto_final
   end
 
 end
