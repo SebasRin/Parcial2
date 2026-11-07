@@ -32,6 +32,7 @@ defmodule Coordinador do
       end
     else
       relacion_movimientos_ciudad(estado)
+      |> reporte_ciudad()
       |> IO.inspect()
     end
   end
@@ -44,10 +45,37 @@ defmodule Coordinador do
     |> Enum.map(&(&1.id_ciudad))
     movimientos = mapa_movimientos.validacion
 
+    movimientos_filtrados =
     Enum.filter(movimientos,fn movimiento ->
       movimiento.id_ciudad in ciudades
-    end )
+    end)
+    %{ciudades: mapa_ciudades.validacion, movimientos: movimientos_filtrados}
   end
+
+  defp reporte_ciudad(datos) do
+    movimientos = datos.movimientos
+    ciudades = datos.ciudades
+
+    Enum.map(ciudades, fn ciudad ->
+
+      movimientos_asociados =
+        Enum.filter(movimientos, fn movimiento ->
+          movimiento.id_ciudad == ciudad.id_ciudad
+        end)
+
+        case movimientos_asociados do
+          [] -> %{nombre: ciudad.nombre,numero_habitantes: ciudad.numero_habitantes,movimientos_asociados: :Sin_movimientos_registrados,
+          cant_movimientos_registrados: 0,mayor_magnitud: :No_aplica ,promedio_profundidad: :No_aplica}
+          _ -> movimiento_mayor = Enum.max_by(movimientos_asociados,&(&1.magnitud))
+              profundidades = Enum.map(movimientos_asociados,fn m -> m.profundidad end)
+              promedio_profundidad = Enum.sum(profundidades) / length(movimientos_asociados)
+              %{nombre: ciudad.nombre,numero_habitantes: ciudad.numero_habitantes,movimientos_asociados: movimientos_asociados, cant_movimientos_registrados: length(movimientos_asociados),mayor_magnitud: {movimiento_mayor.codigo,movimiento_mayor.magnitud},promedio_profundidad: promedio_profundidad}
+
+        end
+    end)
+  end
+
+  defp 
 
 end
 Coordinador.generar_reporte()
