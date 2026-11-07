@@ -7,36 +7,47 @@ defmodule Coordinador do
   @ruta_movimientos "resources/movimientos.txt"
 
   def generar_reporte do
-    pdi_coordinador = spawn(fn -> loop(2) end)
+    pid_coordinador = spawn(fn -> loop(2,[]) end)
 
     spawn(fn ->
       resultado = TrabajadorCiudad.leer_procesar(@ruta_ciudades)
-      send(pdi_coordinador, {:ciudad, resultado})
+      send(pid_coordinador, {:ciudad, resultado})
     end)
-
     Process.sleep(500)
 
     spawn(fn ->
       resultado = TrabajadorMovimientos.leer_procesar(@ruta_movimientos)
-      send(pdi_coordinador, {:movimientos, resultado})
+      send(pid_coordinador, {:movimientos, resultado})
     end)
-
     Process.sleep(500)
   end
 
-  defp loop(cantidad) do
+  defp loop(cantidad,estado) do
     if cantidad > 0 do
       receive do
         {:ciudad, resultado} ->
-          IO.puts("Resultado Ciudades: #{inspect(resultado)}")
-          loop(cantidad - 1)
+          loop(cantidad - 1, estado ++ [resultado])
         {:movimientos, resultado} ->
-          IO.puts("Resultado Movimientos: #{inspect(resultado)}")
-          loop(cantidad - 1)
+          loop(cantidad - 1, estado ++ [resultado])
       end
+    else
+      relacion_movimientos_ciudad(estado)
+      |> IO.inspect()
     end
   end
 
+  defp relacion_movimientos_ciudad(estado) do
+    mapa_ciudades = Enum.find(estado, &(&1.tipo == :ciudad))
+    mapa_movimientos = Enum.find(estado, &(&1.tipo == :movimiento))
+
+    ciudades = mapa_ciudades.validacion
+    |> Enum.map(&(&1.id_ciudad))
+    movimientos = mapa_movimientos.validacion
+
+    Enum.filter(movimientos,fn movimiento ->
+      movimiento.id_ciudad in ciudades
+    end )
+  end
 
 end
 Coordinador.generar_reporte()
