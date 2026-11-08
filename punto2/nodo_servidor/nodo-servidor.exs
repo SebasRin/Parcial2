@@ -4,29 +4,44 @@ defmodule NodoServidor do
   @nombre_servicio_local :servicio_sismos
 
   def main() do
-    Util.mostrar_mensaje("PROCESO SECUNDARIO")
-    registrar_servicio(@nombre_servicio_local)
-    procesar_solicitud()
+    reporte = Coordinador.generar_reporte()
+    pid = spawn(fn -> loop(reporte) end)
+    Util.mostrar_mensaje("[Servidor] Iniciado")
+    registrar_servicio(pid,@nombre_servicio_local)
+    Process.sleep(:infinity)
 
   end
 
-  defp registrar_servicio(nombre_servicio_local),
-    do: Process.register(self(), nombre_servicio_local)
+  defp registrar_servicio(pid,nombre_servicio_local),
+    do: Process.register(pid, nombre_servicio_local)
 
-  defp procesar_solicitud() do
+  defp loop(reporte) do
     receive do
       {destino, solicitud} ->
-        reporte = Coordinador.generar_reporte()
+        Util.mostrar_mensaje("[servidor] recibio #{inspect(solicitud)} de #{inspect(destino)}")
         respuesta = procesar_solicitud(reporte,solicitud)
-        send(destino, respuesta)
-        if respuesta != :fin, do: procesar_solicitud()
+        send(destino, {solicitud,respuesta})
+
+        case respuesta do
+          :fin ->
+            Util.mostrar_mensaje("[servidor] recibio :fin, cliente termino \n")
+          _ -> Util.mostrar_mensaje("[servidor] respondio a #{inspect(solicitud)}")
+        end
+
+        loop(reporte)
+
     end
   end
 
   defp procesar_solicitud(_reporte,:fin), do: :fin
   defp procesar_solicitud(reporte,{:reporte_ciudad_con_mv}),do: Enum.filter(reporte, fn r -> r.movimientos_asociados != :Sin_movimientos_registrados end)
   defp procesar_solicitud(reporte,{:reporte_ciudad_sin_mv}),do: Enum.filter(reporte, fn r -> r.movimientos_asociados == :Sin_movimientos_registrados end)
-  defp procesar_solicitud(reporte,{:reporte_ciudad, id_ciudad}),do: Enum.find(reporte, &(&1.id_ciudad == id_ciudad))
+  defp procesar_solicitud(reporte,{:reporte_ciudad, id_ciudad})do
+    case Enum.find(reporte, &(&1.id_ciudad == id_ciudad)) do
+      nil -> :Ciudad_no_existe
+      ciudad -> ciudad
+    end
+  end
   defp procesar_solicitud(reporte,{:reporte_general}),do: reporte
 
 end

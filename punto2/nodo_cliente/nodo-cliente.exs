@@ -6,11 +6,12 @@ defmodule NodoCliente do
   @servicio_remoto {:servicio_sismos, @nodo_remoto}
 
   @solicitudes [
-    {:reporte_ciudad_sin_mv},{:reporte_ciudad_con_mv},{:reporte_general},:fin
+    {:reporte_ciudad_con_mv},{:reporte_ciudad_sin_mv},
+    {:reporte_ciudad,"C01"},{:reporte_general},:fin
   ]
 
   def main() do
-    Util.mostrar_mensaje("PROCESO PRINCIPAL")
+    Util.mostrar_mensaje("[Cliente] Iniciado")
     @nombre_servicio_local
     |> registrar_servicio()
     establecer_conexion(@nodo_remoto)
@@ -25,9 +26,10 @@ defmodule NodoCliente do
   end
 
   defp iniciar_produccion(false),
-    do: Util.mostrar_error("No se pudo conectar con el nodo servidor")
+    do: Util.mostrar_error("\nNo se pudo conectar con el nodo servidor")
 
   defp iniciar_produccion(true) do
+    IO.puts("\nConectado al nodo-servidor\n")
     enviar_mensajes()
     recibir_respuestas()
   end
@@ -42,9 +44,10 @@ defmodule NodoCliente do
 
   defp recibir_respuestas() do
     receive do
-      :fin ->
-        :ok
-      respuesta ->
+      {:fin,:fin} ->
+        Util.mostrar_mensaje("[cliente] recibio :fin del servidor, termino")
+      {solicitud,respuesta} ->
+        Util.mostrar_mensaje("[cliente] respuesta a #{inspect(solicitud)}")
         Util.mostrar_mensaje("#{inspect(respuesta,pretty: true)}")
         recibir_respuestas()
     end

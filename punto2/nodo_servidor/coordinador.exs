@@ -26,6 +26,8 @@ defmodule Coordinador do
     receive do
       {:reporte_ok, reporte} -> reporte
       {:error_archivo, tipo, razon} -> {:error, tipo,razon}
+    after
+      10000 -> {:error, :timeout, "El coodinador no respondio"}
     end
 
   end
@@ -91,12 +93,12 @@ defmodule Coordinador do
         end)
 
         case movimientos_asociados do
-          [] -> %{nombre: ciudad.nombre,numero_habitantes: ciudad.numero_habitantes,movimientos_asociados: :Sin_movimientos_registrados,
-          cant_movimientos_registrados: 0,mayor_magnitud: :No_aplica ,promedio_profundidad: :No_aplica}
+          [] -> %{id_ciudad: ciudad.id_ciudad,nombre: ciudad.nombre,numero_habitantes: ciudad.numero_habitantes,
+          cant_movimientos_registrados: 0,mayor_magnitud: :No_aplica ,promedio_profundidad: :No_aplica,movimientos_asociados: :Sin_movimientos_registrados}
           _ -> movimiento_mayor = Enum.max_by(movimientos_asociados,&(&1.magnitud))
               profundidades = Enum.map(movimientos_asociados,fn m -> m.profundidad end)
               promedio_profundidad = Float.round(Enum.sum(profundidades) / length(movimientos_asociados),2)
-              %{nombre: ciudad.nombre,numero_habitantes: ciudad.numero_habitantes,movimientos_asociados: movimientos_asociados, cant_movimientos_registrados: length(movimientos_asociados),mayor_magnitud: {movimiento_mayor.codigo,movimiento_mayor.magnitud},promedio_profundidad: promedio_profundidad}
+              %{id_ciudad: ciudad.id_ciudad,nombre: ciudad.nombre,numero_habitantes: ciudad.numero_habitantes, cant_movimientos_registrados: length(movimientos_asociados),mayor_magnitud: {movimiento_mayor.codigo,movimiento_mayor.magnitud},promedio_profundidad: promedio_profundidad,movimientos_asociados: movimientos_asociados}
         end
     end)
   end
