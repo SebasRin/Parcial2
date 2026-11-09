@@ -19,7 +19,13 @@ defmodule NodoServidor do
     receive do
       {destino, solicitud} ->
         Util.mostrar_mensaje("[servidor] recibio #{inspect(solicitud)} de #{inspect(destino)}")
-        respuesta = procesar_solicitud(reporte,solicitud)
+        respuesta =
+          try do
+            procesar_solicitud(reporte,solicitud)
+          rescue
+            e -> {:error, Exception.message(e)}
+          end
+
         send(destino, {solicitud,respuesta})
 
         case respuesta do

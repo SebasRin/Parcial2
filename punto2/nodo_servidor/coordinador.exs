@@ -12,13 +12,23 @@ defmodule Coordinador do
     pid_coordinador = spawn(fn -> loop(2,[],pid_padre) end)
 
     spawn(fn ->
-      resultado = TrabajadorCiudad.leer_procesar(@ruta_ciudades)
+      resultado =
+        try do
+          TrabajadorCiudad.leer_procesar(@ruta_ciudades)
+        rescue
+          e -> %{tipo: :ciudad, error: Exception.message(e)}
+        end
       send(pid_coordinador, {:ciudad, resultado})
     end)
     Process.sleep(500)
 
     spawn(fn ->
-      resultado = TrabajadorMovimientos.leer_procesar(@ruta_movimientos)
+      resultado =
+        try do
+          TrabajadorMovimientos.leer_procesar(@ruta_movimientos)
+        rescue
+          e -> %{tipo: :ciudad,error: Exception.message(e)}
+        end
       send(pid_coordinador, {:movimientos, resultado})
     end)
     Process.sleep(500)
