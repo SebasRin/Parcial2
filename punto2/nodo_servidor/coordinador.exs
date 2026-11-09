@@ -95,6 +95,7 @@ defmodule Coordinador do
     movimientos = datos.movimientos
     ciudades = datos.ciudades
 
+    lista_ciudades =
     Enum.map(ciudades, fn ciudad ->
 
       movimientos_asociados =
@@ -111,6 +112,8 @@ defmodule Coordinador do
               %{id_ciudad: ciudad.id_ciudad,nombre: ciudad.nombre,numero_habitantes: ciudad.numero_habitantes, cant_movimientos_registrados: length(movimientos_asociados),mayor_magnitud: {movimiento_mayor.codigo,movimiento_mayor.magnitud},promedio_profundidad: promedio_profundidad,movimientos_asociados: movimientos_asociados}
         end
     end)
+
+    %{ciudades: lista_ciudades, rechazados: %{ciudades: datos.rechazados_ciudades, movimientos: datos.rechazados_movimientos}}
   end
 
 end
