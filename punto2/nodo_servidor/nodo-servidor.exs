@@ -40,15 +40,30 @@ defmodule NodoServidor do
   end
 
   defp procesar_solicitud(_reporte,:fin), do: :fin
-  defp procesar_solicitud(reporte,{:reporte_ciudad_con_mv}),do: Enum.filter(reporte, fn r -> r.movimientos_asociados != :Sin_movimientos_registrados end)
-  defp procesar_solicitud(reporte,{:reporte_ciudad_sin_mv}),do: Enum.filter(reporte, fn r -> r.movimientos_asociados == :Sin_movimientos_registrados end)
+  defp procesar_solicitud(reporte,{:reporte_ciudad_con_mv})do
+    case Enum.filter(reporte, fn r -> r.movimientos_asociados != :Sin_movimientos_registrados end) do
+      [] -> :No_hay_ciudades_con_movimientos
+      mapa -> mapa
+    end
+  end
+  defp procesar_solicitud(reporte,{:reporte_ciudad_sin_mv}) do
+    case Enum.filter(reporte, fn r -> r.movimientos_asociados == :Sin_movimientos_registrados end) do
+      [] -> :No_hay_ciudades_sin_movimientos
+      mapa -> mapa
+    end
+  end
   defp procesar_solicitud(reporte,{:reporte_ciudad, id_ciudad})do
     case Enum.find(reporte, &(&1.id_ciudad == id_ciudad)) do
       nil -> :Ciudad_no_existe
       ciudad -> ciudad
     end
   end
-  defp procesar_solicitud(reporte,{:reporte_general}),do: reporte
+  defp procesar_solicitud(reporte,{:reporte_general})do
+    case reporte do
+      [] -> :No_hay_ciudades_registradas
+      reporte -> reporte
+    end
+  end
 
 end
 

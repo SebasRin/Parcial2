@@ -11,13 +11,24 @@ defmodule Coordinador do
     pid_coordinador = spawn(fn -> loop(2,[]) end)
 
     spawn(fn ->
-      resultado = TrabajadorCiudad.leer_procesar(@ruta_ciudades)
+      resultado =
+      try do
+        TrabajadorCiudad.leer_procesar(@ruta_ciudades)
+      rescue
+        e -> %{tipo: :ciudad, error: Exception.message(e)}
+      end
+
       send(pid_coordinador, {:ciudad, resultado})
     end)
     Process.sleep(500)
 
     spawn(fn ->
-      resultado = TrabajadorMovimientos.leer_procesar(@ruta_movimientos)
+      resultado =
+      try do
+        TrabajadorMovimientos.leer_procesar(@ruta_movimientos)
+      rescue
+        e -> %{tipo: :movimientos, error: Exception.message(e)}
+      end
       send(pid_coordinador, {:movimientos, resultado})
     end)
     Process.sleep(500)
@@ -32,8 +43,8 @@ defmodule Coordinador do
           loop(cantidad - 1, estado ++ [resultado])
       end
     else
-      ciudad = Enum.find(estado, &(&1.tipo == :ciudad))
-      movimiento = Enum.find(estado, &(&1.tipo == :movimiento))
+      ciudad = Enum.find(estado,fn x -> is_map(x) and x.tipo == :ciudad end)
+      movimiento = Enum.find(estado,fn x -> is_map(x) and x.tipo == :movimiento end)
       if is_map(ciudad) and is_map(movimiento)  do
         datos = relacion_movimientos_ciudad(estado)
         reporte = reporte_ciudad(datos)
