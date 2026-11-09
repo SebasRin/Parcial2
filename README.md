@@ -162,3 +162,41 @@ elixir --sname nodocliente@cliente --cookie cookie nodo-cliente.exs
 ```
 
 Debe mostrar de nuevo las cuatro respuestas en el mismo orden y terminar al recibir `:fin`. El servidor sigue atendiendo solicitudes.
+
+---
+
+## Reflexión sobre el uso de inteligencia artificial
+
+### 1. Herramientas y agentes
+
+- **ChatGPT:** lo utilicé como herramienta de depuración. Me ayudó a entender y solucionar errores específicos de sintaxis y ejecución en Elixir, como el `ArgumentError` en la conversión de strings, causado por los saltos de línea `\r\n` en los archivos de entrada.
+- **Documentación oficial de Elixir:** la usé para consultar funciones, por ejemplo [`Time.new/5`](https://elixir.hexdocs.pm/1.20.5/Time.html#new/5-examples).
+
+### 2. Caso decisivo
+
+Cuando intenté ejecutar el cliente por segunda vez para la prueba de las "dos ejecuciones consecutivas", el servidor ya no respondía.
+
+La IA me explicó que el mensaje `:fin` estaba terminando el proceso `loop`, aunque el nodo seguía vivo gracias a `Process.sleep(:infinity)`. El cliente intentaba enviar mensajes a un nombre de proceso (`:servicio_sismos`) que ya no existía en el servidor.
+
+La solución propuesta fue usar un `case` dentro del `receive` del servidor. En lugar de dejar que el proceso muera, la rama de `:fin` imprime un mensaje de confirmación y vuelve a llamar a `loop(reporte)`.
+
+Adapté esta lógica y la probé: al ejecutar el cliente por segunda vez, comprobé que el servidor mantenía el servicio registrado y respondía correctamente las 4 solicitudes de nuevo.
+
+### 3. Idea diferente de la clase
+
+En clase vimos el manejo básico de excepciones, pero la IA me sugirió aplicar un concepto de **tolerancia a fallos en la concurrencia**: envolver los procesos hijos en bloques `try/rescue`.
+
+Normalmente, si un proceso creado con `spawn` falla, muere silenciosamente y el proceso padre se queda esperando su respuesta para siempre. La sugerencia fue que cada `spawn` atrapara sus propios errores y enviara al coordinador un mensaje con el error, por ejemplo `%{error: ...}`.
+
+Lo implementé y lo probé borrando el archivo `ciudades.txt`: el sistema no colapsó, el coordinador recibió el mensaje de error y el servidor siguió vivo y funcional.
+
+### 4. Conclusiones
+
+**Lo que comprendo por mi cuenta:** el paso de mensajes con `send` y `receive`, cómo levantar y conectar los nodos, el uso de `spawn` para crear procesos y cómo el *pattern matching* facilita la extracción de datos.
+
+**Qué cambiaría en un siguiente proyecto:** en lugar de usar `spawn` y `receive` manual para las tareas concurrentes, implementaría `Task.async` y `Task.await`:
+
+- `Task.async` crea un proceso ligado y monitoreado automáticamente por el proceso que lo inició.
+- `Task.await` recibe el resultado de forma síncrona, lo que elimina el `loop` manual con `receive` y el contador.
+- `Task.await` propaga los fallos de la tarea al proceso principal, lo que simplificaría mi lógica actual de `try/rescue` dentro de cada `spawn`. Si un archivo falla al leerse, el error se podría manejar de forma centralizada, en lugar de enviar mapas `%{error: ...}` entre procesos.
+Esto hara que el codigo sea mas legible y menos propenso a errores.
